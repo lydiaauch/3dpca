@@ -2,7 +2,8 @@
 
 <head>
     <script src="lib/three.js"></script>
-    <script src="lib/OrbitControls.js"></script>
+    <script src="lib/orbitControls.js"></script>
+    <script src="lib/Projector.js"></script>
     <script src="lib/jquery.min.js"></script>
     <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 </head>
@@ -41,7 +42,7 @@
         light.position.set(-100, 200, 100);
         scene.add(light);
 
-        function buildAxis( src, dst, colorHex, dashed ) {
+        function buildAxis(src, dst, colorHex, dashed) {
             var geom = new THREE.Geometry(), mat;
 
             if(dashed) {
@@ -54,11 +55,11 @@
             geom.vertices.push( dst.clone() );
             geom.computeLineDistances();
 
-            var axis = new THREE.Line( geom, mat, THREE.LineSegments );
+            axis = new THREE.Line( geom, mat, THREE.LineSegments );
             return axis;
         }
 
-        function buildAxes( length ) {
+        function buildAxes(length) {
             var axes = new THREE.Object3D();
 
             axes.add( buildAxis( new THREE.Vector3( 0, 0, 0 ), new THREE.Vector3( length, 0, 0 ), 0xA4A4A4, false ) ); // +X
@@ -88,18 +89,14 @@
                 };
             });
 
-            var xExent = d3.extent(unfiltered, function (d) {return d.x; }),
-                    yExent = d3.extent(unfiltered, function (d) {return d.y; }),
-                    zExent = d3.extent(unfiltered, function (d) {return d.z; });
-
             var xScale = d3.scale.linear()
-                    .domain(xExent)
+                    .domain(d3.extent(unfiltered, function (d) {return d.x; }))
                     .range([-50,50]);
             var yScale = d3.scale.linear()
-                    .domain(yExent)
+                    .domain(d3.extent(unfiltered, function (d) {return d.y; }))
                     .range([-50,50]);
             var zScale = d3.scale.linear()
-                    .domain(zExent)
+                    .domain(d3.extent(unfiltered, function (d) {return d.z; }))
                     .range([-50,50]);
 
             var pointCount = unfiltered.length;
@@ -116,24 +113,50 @@
                     .domain(categories)
                     .range(color_set);
 
-            var mat = new THREE.PointsMaterial({
-                 vertexColors: true,
-                 size: 7
-            });
+            var geom = new THREE.SphereGeometry(1.5, 32, 32);
+            points = new THREE.Object3D();
+            scene.add(points);
 
-            var particles = new THREE.Geometry();
             for (var i = 0; i < pointCount; i ++) {
-                var x = xScale(unfiltered[i].x);
-                var y = yScale(unfiltered[i].y);
-                var z = zScale(unfiltered[i].z);
+                var x = xScale(unfiltered[i].x),
+                    y = yScale(unfiltered[i].y),
+                    z = zScale(unfiltered[i].z);
                 group = unfiltered[i].r;
 
-                particles.vertices.push(new THREE.Vector3(x, y, z));
-                particles.colors.push(new THREE.Color().set(color(group)));
+                var point = new THREE.Mesh(geom, new THREE.MeshBasicMaterial({
+                    side: THREE.DoubleSide,
+                    color: color(group)
+                }));
+                point.position.set(x, y, z);
+                points.add(point);
             }
 
-            var points = new THREE.Points(particles, mat);
-            scene.add(points);
+            canvas1 = document.createElement('canvas');
+            context1 = canvas1.getContext('2d');
+            context1.font = "Bold 20px Arial";
+            context1.fillStyle = "rgba(0,0,0,0.95)";
+            context1.fillText('Hello, world!', 0, 20);
+
+            var raycaster = new THREE.Raycaster();
+            var mouseVector = new THREE.Vector3();
+
+            function onMouseMove( event ) {
+                mouseVector.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+                mouseVector.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+                raycaster.setFromCamera(mouseVector, camera);
+                var intersects = raycaster.intersectObjects(scene.children, true);
+
+                if (intersects.length > 0) {
+                    for (var i = 0; i < intersects.length; i++) {
+//                        intersects[i].object.material.color.set( 0xffffff );
+//                        intersects = [];
+                    }
+                }
+            }
+
+
+            window.addEventListener( 'mousemove', onMouseMove, false );
         });
 
         controls = new THREE.OrbitControls(camera, renderer.domElement);
