@@ -11,6 +11,7 @@
 <script>
     var scene, camera, renderer;
     var objects = [];
+    var INTERSECTED;
 
     init();
     animate();
@@ -114,7 +115,7 @@
                     .domain(categories)
                     .range(color_set);
 
-            var geom = new THREE.SphereGeometry(1.5, 32, 32);
+            var geom = new THREE.SphereGeometry(1, 32, 32);
             points = new THREE.Object3D();
             scene.add(points);
 
@@ -135,9 +136,10 @@
 
             canvas1 = document.createElement('canvas');
             context1 = canvas1.getContext('2d');
-            context1.font = "Bold 20px Arial";
-            context1.fillStyle = "rgba(0,0,0,0.95)";
-            context1.fillText('Hello, world!', 0, 20);
+            context1.font = "Bold 15px Arial";
+
+            texture1 = new THREE.Texture(canvas1);
+            texture1.needsUpdate = true;
 
             var raycaster = new THREE.Raycaster();
             var mouseVector = new THREE.Vector3();
@@ -152,10 +154,44 @@
                 var intersects = raycaster.intersectObjects(scene.children, true);
 
                 if (intersects.length > 0) {
-                    for (var i = 0; i < intersects.length; i++) {
-//                        intersects[i].object.material.color.set( 0xffffff );
-//                        intersects = [];
+                    if ( intersects[0].object != INTERSECTED ) {
+                        if (INTERSECTED) {
+                            INTERSECTED.material.color.setHex(INTERSECTED.currentHex);
+                        }
+                        if (intersects[0].object.name) {
+                            // store reference to closest object as current intersection object
+                            INTERSECTED = intersects[0].object;
+                            // store color of closest object (for later restoration)
+                            INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
+                            // set a new color for closest object
+                            INTERSECTED.material.color.setHex( 0xffffff );
+
+                            console.log(intersects[0].object.name);
+//                            context1.clearRect(0,0,640,480);
+//                            var message = intersects[0].object.name;
+//                            var metrics = context1.measureText(message);
+//                            var width = metrics.width;
+//                            context1.fillStyle = "rgba(0,0,0,0.95)"; // black border
+//                            context1.fillRect( 0,0, width+8,20+8);
+//                            context1.fillStyle = "rgba(255,255,255,0.95)"; // white filler
+//                            context1.fillRect( 2,2, width+4,20+4 );
+//                            context1.fillStyle = "rgba(0,0,0,1)"; // text color
+//                            context1.fillText( message, 4,20 );
+//                            texture1.needsUpdate = true;
+                        }
+                        else {
+                            context1.clearRect(0,0,300,300);
+                            texture1.needsUpdate = true;
+                        }
                     }
+                }
+                else {
+                    if (INTERSECTED) {
+                        INTERSECTED.material.color.setHex(INTERSECTED.currentHex);
+                    }
+                    INTERSECTED = null;
+                    context1.clearRect(0,0,300,300);
+                    texture1.needsUpdate = true;
                 }
             }
         });
