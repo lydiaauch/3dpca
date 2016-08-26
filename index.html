@@ -5,6 +5,7 @@
     <script src="lib/orbitControls.js"></script>
     <script src="lib/Projector.js"></script>
     <script src="lib/jquery.min.js"></script>
+    <script src="lib/dat.gui.min.js"></script>
     <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 </head>
 <body>
@@ -12,30 +13,35 @@
     var scene, camera, renderer;
     var objects = [];
     var INTERSECTED;
+    var MAXGROUPS = 41;
 
     init();
     animate();
 
     function init() {
         scene = new THREE.Scene();
-        var WIDTH = window.innerWidth,
-            HEIGHT = window.innerHeight;
+        var BIGWIDTH = window.innerWidth * 0.79,
+            LWIDTH = window.innerWidth * 0.18,
+            HEIGHT = window.innerHeight,
+            COLORBLOCK = 15,
+            SPACING = 4;
 
         renderer = new THREE.WebGLRenderer({antialias:true});
-        renderer.setSize(WIDTH, HEIGHT);
+        renderer.setSize(BIGWIDTH, HEIGHT);
         document.body.appendChild(renderer.domElement);
 
-        camera = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, .1, 10000);
+        camera = new THREE.PerspectiveCamera(45, BIGWIDTH / HEIGHT, .1, 10000);
         camera.position.set(0,10,250);
         scene.add(camera);
 
         controls = new THREE.OrbitControls(camera, renderer.domElement);
 
         window.addEventListener('resize', function() {
-            var WIDTH = window.innerWidth,
+            var BIGWIDTH = window.innerWidth * 0.79,
+                LWIDTH = window.innerWidth * 0.18,
                 HEIGHT = window.innerHeight;
-            renderer.setSize(WIDTH, HEIGHT);
-            camera.aspect = WIDTH / HEIGHT;
+            renderer.setSize(BIGWIDTH, HEIGHT);
+            camera.aspect = BIGWIDTH / HEIGHT;
             camera.updateProjectionMatrix();
         });
 
@@ -87,7 +93,8 @@
                     x: +d.x,
                     y: +d.y,
                     z: +d.z,
-                    r: d.group
+                    r: d.group,
+                    i: i
                 };
             });
 
@@ -134,67 +141,78 @@
                 points.add(point);
             }
 
-            canvas1 = document.createElement('canvas');
-            context1 = canvas1.getContext('2d');
-            context1.font = "Bold 15px Arial";
+//            var raycaster = new THREE.Raycaster();
+//            var mouseVector = new THREE.Vector3();
+//
+//            window.addEventListener( 'mousemove', onMouseMove, false );
 
-            texture1 = new THREE.Texture(canvas1);
-            texture1.needsUpdate = true;
+//            function onMouseMove( event ) {
+//
+//                mouseVector.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+//                mouseVector.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+//
+//                raycaster.setFromCamera(mouseVector, camera);
+//                var intersects = raycaster.intersectObjects(scene.children, true);
+//
+//                if (intersects.length > 0) {
+//                    if ( intersects[0].object != INTERSECTED ) {
+//                        if (INTERSECTED) {
+//                            INTERSECTED.material.color.setHex(INTERSECTED.currentHex);
+//                        }
+//                        if (intersects[0].object.name) {
+//                            // store reference to closest object as current intersection object
+//                            INTERSECTED = intersects[0].object;
+//                            // store color of closest object (for later restoration)
+//                            INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
+//                            // set a new color for closest object
+//                            INTERSECTED.material.color.setHex( 0xffffff );
+//                        }
+//                    }
+//                }
+//                else {
+//                    if (INTERSECTED) {
+//                        INTERSECTED.material.color.setHex(INTERSECTED.currentHex);
+//                    }
+//                    INTERSECTED = null;
+//                }
+//            }
 
-            var raycaster = new THREE.Raycaster();
-            var mouseVector = new THREE.Vector3();
+            var svg = d3.select("body").append("svg")
+                    .attr("width", LWIDTH)
+                    .attr("height", HEIGHT)
+                    .append("g");
 
-            window.addEventListener( 'mousemove', onMouseMove, false );
-
-            function onMouseMove( event ) {
-                mouseVector.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-                mouseVector.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-
-                raycaster.setFromCamera(mouseVector, camera);
-                var intersects = raycaster.intersectObjects(scene.children, true);
-
-                if (intersects.length > 0) {
-                    if ( intersects[0].object != INTERSECTED ) {
-                        if (INTERSECTED) {
-                            INTERSECTED.material.color.setHex(INTERSECTED.currentHex);
-                        }
-                        if (intersects[0].object.name) {
-                            // store reference to closest object as current intersection object
-                            INTERSECTED = intersects[0].object;
-                            // store color of closest object (for later restoration)
-                            INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
-                            // set a new color for closest object
-                            INTERSECTED.material.color.setHex( 0xffffff );
-
-                            console.log(intersects[0].object.name);
-//                            context1.clearRect(0,0,640,480);
-//                            var message = intersects[0].object.name;
-//                            var metrics = context1.measureText(message);
-//                            var width = metrics.width;
-//                            context1.fillStyle = "rgba(0,0,0,0.95)"; // black border
-//                            context1.fillRect( 0,0, width+8,20+8);
-//                            context1.fillStyle = "rgba(255,255,255,0.95)"; // white filler
-//                            context1.fillRect( 2,2, width+4,20+4 );
-//                            context1.fillStyle = "rgba(0,0,0,1)"; // text color
-//                            context1.fillText( message, 4,20 );
-//                            texture1.needsUpdate = true;
-                        }
-                        else {
-                            context1.clearRect(0,0,300,300);
-                            texture1.needsUpdate = true;
-                        }
+            var legend = svg.selectAll(".legend")
+                .data(unfiltered.slice(0,MAXGROUPS))
+                .enter()
+                .append("g")
+                .attr("class", "legend")
+                .attr("transform", function(d, i) {
+                    while (i <= MAXGROUPS) {
+                        var height = COLORBLOCK + SPACING;
+                        var horz = COLORBLOCK + 20;
+                        var vert = i * height + 20;
+                        return "translate(" + horz + ", " + vert + ")";
                     }
-                }
-                else {
-                    if (INTERSECTED) {
-                        INTERSECTED.material.color.setHex(INTERSECTED.currentHex);
-                    }
-                    INTERSECTED = null;
-                    context1.clearRect(0,0,300,300);
-                    texture1.needsUpdate = true;
-                }
-            }
+                });
+
+            legend.append("rect")
+                .attr("width", COLORBLOCK)
+                .attr("height", COLORBLOCK)
+                .style("fill", function(i) {
+                    return color_set[i.i];
+                })
+                .style("stroke", function(i) {
+                    return color_set[i];
+                });
+
+            legend.append("text")
+                .attr("x", COLORBLOCK + SPACING)
+                .attr("y", COLORBLOCK )
+                .text(function (d, i) { while (i <= MAXGROUPS) { return d.r; }});
         });
+
+
     }
 
     function animate() {
