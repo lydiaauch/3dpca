@@ -40,9 +40,12 @@
             var BIGWIDTH = window.innerWidth * 0.79,
                 LWIDTH = window.innerWidth * 0.18,
                 HEIGHT = window.innerHeight;
+
             renderer.setSize(BIGWIDTH, HEIGHT);
             camera.aspect = BIGWIDTH / HEIGHT;
             camera.updateProjectionMatrix();
+
+            d3.select(".lcontainer").attr("height", HEIGHT).attr("width", LWIDTH);
         });
 
         renderer.setClearColor(0x333F47, 1);
@@ -83,7 +86,6 @@
         axes = buildAxes( 1000 );
         scene.add(axes);
 
-        // Import Data Points
         d3.csv("auto_inbreed.evec", function (error, dataset) {
             if (error) throw error;
 
@@ -141,43 +143,9 @@
                 points.add(point);
             }
 
-//            var raycaster = new THREE.Raycaster();
-//            var mouseVector = new THREE.Vector3();
-//
-//            window.addEventListener( 'mousemove', onMouseMove, false );
-
-//            function onMouseMove( event ) {
-//
-//                mouseVector.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-//                mouseVector.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-//
-//                raycaster.setFromCamera(mouseVector, camera);
-//                var intersects = raycaster.intersectObjects(scene.children, true);
-//
-//                if (intersects.length > 0) {
-//                    if ( intersects[0].object != INTERSECTED ) {
-//                        if (INTERSECTED) {
-//                            INTERSECTED.material.color.setHex(INTERSECTED.currentHex);
-//                        }
-//                        if (intersects[0].object.name) {
-//                            // store reference to closest object as current intersection object
-//                            INTERSECTED = intersects[0].object;
-//                            // store color of closest object (for later restoration)
-//                            INTERSECTED.currentHex = INTERSECTED.material.color.getHex();
-//                            // set a new color for closest object
-//                            INTERSECTED.material.color.setHex( 0xffffff );
-//                        }
-//                    }
-//                }
-//                else {
-//                    if (INTERSECTED) {
-//                        INTERSECTED.material.color.setHex(INTERSECTED.currentHex);
-//                    }
-//                    INTERSECTED = null;
-//                }
-//            }
-
             var svg = d3.select("body").append("svg")
+                    .attr("viewBox", "0,0,200,815")
+                    .attr("class", "lcontainer")
                     .attr("width", LWIDTH)
                     .attr("height", HEIGHT)
                     .append("g");
@@ -211,8 +179,6 @@
                 .attr("y", COLORBLOCK )
                 .text(function (d, i) { while (i <= MAXGROUPS) { return d.r; }});
         });
-
-
     }
 
     function animate() {
@@ -226,5 +192,4 @@
 
 </script>
 </body>
-
 </html>
