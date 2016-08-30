@@ -10,3 +10,4 @@
 
 </br>
 <p>Where line1 is not data and *** is a placeholder value.</p>
+<p>Extra spacing does not matter and x/y/z values must be numbers</p>
