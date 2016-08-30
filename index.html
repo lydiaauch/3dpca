@@ -4,27 +4,71 @@
     <script src="lib/three.js"></script>
     <script src="lib/orbitControls.js"></script>
     <script src="lib/Projector.js"></script>
-    <script src="lib/jquery.min.js"></script>
-    <script src="lib/dat.gui.min.js"></script>
     <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 </head>
 <body>
+<div id="wrapper">
+    <p>
+        <input id="uploader" name="uploader" type="file" />
+    </p>
+</div>
 <script>
     var scene, camera, renderer;
     var objects = [];
     var INTERSECTED;
     var MAXGROUPS = 41;
 
+    var uploader = document.getElementById("uploader");
+    var reader = new FileReader();
+    var data;
+
+    var BIGWIDTH = window.innerWidth * 0.79,
+            LWIDTH = window.innerWidth * 0.18,
+            HEIGHT = window.innerHeight,
+            COLORBLOCK = 15,
+            SPACING = 4;
+
+    function getPts(x) {
+        var unfiltered = [];
+        x.forEach(function (d, i) {
+            unfiltered[i] = {
+                x: +d[1],
+                y: +d[2],
+                z: +d[3],
+                r: d[7],
+                i: i
+            };
+        });
+        return unfiltered;
+    }
+
+    reader.onload = function(e) {
+        var contents = e.target.result;
+        var rawData = contents.split(/\n/);
+        var tempData = [];
+        for (i = 0; i < rawData.length; i++) {
+            pointData = rawData[i].split(/\s/);
+            setData = pointData.filter(function(e) { return e!==""; });
+            tempData.push(setData);
+        }
+
+        tempData.shift();
+        data = getPts(tempData);
+        scatter(data);
+    };
+
+    uploader.addEventListener("change", handleFiles, false);
+
+    function handleFiles() {
+        var file = this.files[0];
+        reader.readAsText(file);
+    }
+
     init();
     animate();
 
     function init() {
         scene = new THREE.Scene();
-        var BIGWIDTH = window.innerWidth * 0.79,
-            LWIDTH = window.innerWidth * 0.18,
-            HEIGHT = window.innerHeight,
-            COLORBLOCK = 15,
-            SPACING = 4;
 
         renderer = new THREE.WebGLRenderer({antialias:true});
         renderer.setSize(BIGWIDTH, HEIGHT);
@@ -85,72 +129,62 @@
 
         axes = buildAxes( 1000 );
         scene.add(axes);
+    }
 
-        d3.csv("auto_inbreed.evec", function (error, dataset) {
-            if (error) throw error;
+    function scatter(data) {
+        unfiltered = data;
 
-            var unfiltered = [];
-            dataset.forEach(function (d, i) {
-                unfiltered[i] = {
-                    x: +d.x,
-                    y: +d.y,
-                    z: +d.z,
-                    r: d.group,
-                    i: i
-                };
-            });
+        var xScale = d3.scale.linear()
+                .domain(d3.extent(unfiltered, function (d) {return d.x; }))
+                .range([-50,50]);
+        var yScale = d3.scale.linear()
+                .domain(d3.extent(unfiltered, function (d) {return d.y; }))
+                .range([-50,50]);
+        var zScale = d3.scale.linear()
+                .domain(d3.extent(unfiltered, function (d) {return d.z; }))
+                .range([-50,50]);
 
-            var xScale = d3.scale.linear()
-                    .domain(d3.extent(unfiltered, function (d) {return d.x; }))
-                    .range([-50,50]);
-            var yScale = d3.scale.linear()
-                    .domain(d3.extent(unfiltered, function (d) {return d.y; }))
-                    .range([-50,50]);
-            var zScale = d3.scale.linear()
-                    .domain(d3.extent(unfiltered, function (d) {return d.z; }))
-                    .range([-50,50]);
+        var pointCount = unfiltered.length;
 
-            var pointCount = unfiltered.length;
-
-            var categories = [];
-            for (i=0; i<pointCount; i++) {
-                var group = unfiltered[i].r;
-                if (categories.indexOf(group) == -1) {
-                    categories.push(unfiltered[i].r);
-                }
+        var categories = [];
+        for (i=0; i<pointCount; i++) {
+            var group = unfiltered[i].r;
+            if (categories.indexOf(group) == -1) {
+                categories.push(unfiltered[i].r);
             }
+        }
 
-            var color = d3.scale.ordinal()
-                    .domain(categories)
-                    .range(color_set);
+        var color = d3.scale.ordinal()
+                .domain(categories)
+                .range(color_set);
 
-            var geom = new THREE.SphereGeometry(1, 32, 32);
-            points = new THREE.Object3D();
-            scene.add(points);
+        var geom = new THREE.SphereGeometry(1, 32, 32);
+        points = new THREE.Object3D();
+        scene.add(points);
 
-            for (var i = 0; i < pointCount; i ++) {
-                var x = xScale(unfiltered[i].x),
+        for (var i = 0; i < pointCount; i ++) {
+            var x = xScale(unfiltered[i].x),
                     y = yScale(unfiltered[i].y),
                     z = zScale(unfiltered[i].z);
-                    group = unfiltered[i].r;
+            group = unfiltered[i].r;
 
-                var point = new THREE.Mesh(geom, new THREE.MeshBasicMaterial({
-                    side: THREE.DoubleSide,
-                    color: color(group)
-                }));
-                point.name = group;
-                point.position.set(x, y, z);
-                points.add(point);
-            }
+            var point = new THREE.Mesh(geom, new THREE.MeshBasicMaterial({
+                side: THREE.DoubleSide,
+                color: color(group)
+            }));
+            point.name = group;
+            point.position.set(x, y, z);
+            points.add(point);
+        }
 
-            var svg = d3.select("body").append("svg")
-                    .attr("viewBox", "0,0,200,815")
-                    .attr("class", "lcontainer")
-                    .attr("width", LWIDTH)
-                    .attr("height", HEIGHT)
-                    .append("g");
+        var svg = d3.select("body").append("svg")
+                .attr("viewBox", "0,0,200,815")
+                .attr("class", "lcontainer")
+                .attr("width", LWIDTH)
+                .attr("height", HEIGHT)
+                .append("g");
 
-            var legend = svg.selectAll(".legend")
+        var legend = svg.selectAll(".legend")
                 .data(unfiltered.slice(0,MAXGROUPS))
                 .enter()
                 .append("g")
@@ -164,7 +198,7 @@
                     }
                 });
 
-            legend.append("rect")
+        legend.append("rect")
                 .attr("width", COLORBLOCK)
                 .attr("height", COLORBLOCK)
                 .style("fill", function(i) {
@@ -174,11 +208,10 @@
                     return color_set[i];
                 });
 
-            legend.append("text")
+        legend.append("text")
                 .attr("x", COLORBLOCK + SPACING)
                 .attr("y", COLORBLOCK )
                 .text(function (d, i) { while (i <= MAXGROUPS) { return d.r; }});
-        });
     }
 
     function animate() {
