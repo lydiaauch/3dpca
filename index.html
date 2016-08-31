@@ -16,7 +16,6 @@
     var scene, camera, renderer;
     var objects = [];
     var INTERSECTED;
-    var MAXGROUPS = 41;
 
     var uploader = document.getElementById("uploader");
     var reader = new FileReader();
@@ -35,7 +34,7 @@
                 x: +d[1],
                 y: +d[2],
                 z: +d[3],
-                r: d[7],
+                r: d[d.length - 1],
                 i: i
             };
         });
@@ -184,13 +183,16 @@
                 .attr("height", HEIGHT)
                 .append("g");
 
+        legend_data = unfiltered.slice(0,categories.length -1 );
+        console.log(legend_data);
+
         var legend = svg.selectAll(".legend")
-                .data(unfiltered.slice(0,MAXGROUPS))
+                .data(legend_data)
                 .enter()
                 .append("g")
                 .attr("class", "legend")
                 .attr("transform", function(d, i) {
-                    while (i <= MAXGROUPS) {
+                    while (i < categories.length) {
                         var height = COLORBLOCK + SPACING;
                         var horz = COLORBLOCK + 20;
                         var vert = i * height + 20;
@@ -211,7 +213,7 @@
         legend.append("text")
                 .attr("x", COLORBLOCK + SPACING)
                 .attr("y", COLORBLOCK )
-                .text(function (d, i) { while (i <= MAXGROUPS) { return d.r; }});
+                .text(function (d, i) { while (i < categories.length) { return categories[i]; }});
     }
 
     function animate() {
