@@ -9,9 +9,23 @@
 </head>
 <body>
     <div id="wrapper">
-        <p>
-            <input id="uploader" name="uploader" type="file" />
+        <div id="eigvals">
+            <input class="eig_button" type="checkbox" id="e1" checked="true">e1
+            <input class="eig_button" type="checkbox" id="e2" checked="true">e2
+            <input class="eig_button" type="checkbox" id="e3" checked="true">e3
+            <input class="eig_button" type="checkbox" id="e4">e4
+            <input class="eig_button" type="checkbox" id="e5">e5
+            <input class="eig_button" type="checkbox" id="e6">e6
+        </div>
+        <p id="upload">
+            <input id="uploader" type="file"/>
         </p>
+        <button id="replot" onclick="plot_points()">Reload Plot</button>
+        <div id="toggles">
+            <button id="toggle_off">Toggle All Off</button>
+            <button id="toggle_gray">Toggle All Gray</button>
+            <button id="toggle_on">Toggle All On</button>
+        </div>
     </div>
     <div id="plot"></div>
     <div id="legend"></div>

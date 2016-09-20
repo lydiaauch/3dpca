@@ -12,3 +12,30 @@
     float: right;
     overflow: scroll;
 }
+
+#push {
+    margin-left: 20px;
+}
+
+#wrapper {
+    float: left;
+    width: 100%;
+}
+
+#upload {
+    float:left;
+    margin-left: 40px;
+}
+
+#toggles {
+    float: right;
+    margin-top: 16px;
+}
+#eigvals {
+    margin-top: 16px;
+    float: left;
+}
+
+#replot {
+    margin-top: 16px;
+}
