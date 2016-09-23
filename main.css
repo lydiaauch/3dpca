@@ -5,6 +5,10 @@
     float: left;
 }
 
+#plot canvas {
+    position: static;
+}
+
 #legend {
     width: 17%;
     height: 90%;
