@@ -162,16 +162,37 @@ function click(event, color){
 
     if(intersects.length > 0 ){
         var object = intersects[0].object;
+        var canvas1 = document.createElement('canvas');
+        var context1 = canvas1.getContext('2d');
+        var texture1 = new THREE.Texture(canvas1);
+
         if(object.state == "on") {
-            intersects[0].object.material.color.setHex(0xa6a6a6);
+            object.material.color.setHex(0xa6a6a6);
             object.state = "gray";
             // Display Name
+
+            context1.font = "Bold 20px Arial";
+            context1.fillStyle = "rgba(0,0,0,0.95)";
+            context1.fillText('Hello, world!', 0, 20);
+            // canvas contents will be used for a texture
+            var spriteMaterial = new THREE.PointsMaterial( { map: texture1 } );
+
+            sprite1 = new THREE.Sprite( spriteMaterial );
+            sprite1.scale.set(200,100,1.0);
+            sprite1.position.set( mouse.x, mouse.y - 20, 0 );
+
+            scene.add( sprite1 );
+
+            console.log(scene);
 
         }
         else if(object.state == "gray") {
             point_color = color(object.group);
-            intersects[0].object.material.color.setStyle(point_color);
+            object.material.color.setStyle(point_color);
             object.state = "on";
+            // Remove Name
+            context1.clearRect(0,0,300,300);
+            texture1.needsUpdate = true;
         }
         renderer.render(scene,camera);
     }
