@@ -21,7 +21,6 @@ reader.onload = function(e) {
         setData = pointData.filter(function(e) { return e!==""; });
         tempData.push(setData);
     }
-
     tempData.shift();
     unfiltered_data = getPts(tempData);
     plot_points(unfiltered_data);
@@ -31,6 +30,7 @@ uploader.addEventListener("change", upload, false);
 uploader.addEventListener("click", function() { this.value = ""; });
 
 function upload() {
+    document.getElementById("tooltip").innerHTML = "Last Clicked: ";
     count_arr = checkCount();
     if (count_arr.length == 3) {
         var file = this.files[0];
@@ -48,6 +48,7 @@ function upload() {
 }
 
 function plot_points() {
+    document.getElementById("tooltip").innerHTML = "Last Clicked: ";
     eig_arr = checkCount();
     if (eig_arr.length == 3) {
         var filtered_data = select_eigs(unfiltered_data);
@@ -162,11 +163,10 @@ function click(event, color){
 
     if(intersects.length > 0 ){
         var object = intersects[0].object;
+        document.getElementById("tooltip").innerHTML = "Last Clicked: " + object.name;
         if(object.state == "on") {
             intersects[0].object.material.color.setHex(0xa6a6a6);
             object.state = "gray";
-            // Display Name
-
         }
         else if(object.state == "gray") {
             point_color = color(object.group);
@@ -283,21 +283,23 @@ function legendText(categories) {
 function legendClick(group, clicked, color) {
     change = get_all(group, points); // array of Mesh's
     change.forEach(function(point) {
-        if (point.state == "on") {
+        if (change[0].state == "on") {
             d3.select(clicked).select("rect").style("fill", '#a6a6a6');
             for (i = 0; i < change.length; i++) {
                 change[i].material.color.setHex(0xa6a6a6);
             }
             point.state = "gray";
         }
-        else if (point.state == "gray") {
+        else if (change[0].state == "gray") {
             d3.select(clicked).select("rect").style("fill", '#ffffff');
             for (i = 0; i < change.length; i++) {
                 change[i].material.visible = false;
             }
             point.state = "off";
         }
-        else if (point.state == "off") {
+        else if (change[0].state == "off") {
+            console.log(change[1]);
+            console.log(point);
             point_color = color(point.group);
             d3.select(clicked).select("rect")
                 .style("fill", point_color);
@@ -412,7 +414,7 @@ function select_eigs(data) {
             z: d[eig_arr[2]],
             r: d.r,
             i: i,
-            state: "on", // "on", "off", "grey"
+            state: "on", // "on", "off", "gray"
             id: d.id
         };
     });
