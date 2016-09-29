@@ -127,9 +127,10 @@ function init() {
 function scatter(data) {
 
     var categories = get_categories(data);
-    var color = d3.scale.ordinal()
-        .domain(categories)
-        .range(color_set);
+
+    var color = d3.scale.ordinal();
+    color.domain(categories);
+    color.range(color_set);
 
     points = new THREE.Object3D();
     points.name = "points";
@@ -152,6 +153,7 @@ function animate() {
 }
 
 function click(event, color){
+    color.domain(categories);
 
     mouse.x = ((event.clientX - renderer.domElement.offsetLeft) / renderer.domElement.width) * 2 - 1;
     mouse.y = - ((event.clientY - renderer.domElement.offsetTop) / renderer.domElement.height) * 2 + 1;
@@ -160,16 +162,15 @@ function click(event, color){
     raycaster.setFromCamera(mouse, camera);
 
     intersects = raycaster.intersectObjects(points.children, true);
-
     if(intersects.length > 0 ){
         var object = intersects[0].object;
+        point_color = color(object.group);
         document.getElementById("tooltip").innerHTML = "Last Clicked: " + object.name;
         if(object.state == "on") {
             intersects[0].object.material.color.setHex(0xa6a6a6);
             object.state = "gray";
         }
         else if(object.state == "gray") {
-            point_color = color(object.group);
             intersects[0].object.material.color.setStyle(point_color);
             object.state = "on";
         }
@@ -235,7 +236,7 @@ function createPoint(points, data, color) {
 function makeLegend(color, categories) {
     var svg = d3.select("#legend").append("svg")
         .attr("class", "lContainer")
-        .attr("width", LWIDTH + 100)
+        .attr("width", LWIDTH - 10)
         .attr("height", (categories.length + 1) * 20);
 
     legend = legendGroups(svg, categories, color);
@@ -249,6 +250,7 @@ function legendGroups(svg, categories, color) {
         .enter()
         .append("g")
         .attr("class", "ldata")
+        .attr("state", "on")
         .attr("transform", function(d, i) {
             while (i <= categories.length) {
                 var height = COLORBLOCK + SPACING;
@@ -282,24 +284,29 @@ function legendText(categories) {
 
 function legendClick(group, clicked, color) {
     change = get_all(group, points); // array of Mesh's
-    change.forEach(function(point) {
-        if (change[0].state == "on") {
+    legend_state = clicked.getAttribute("state");
+    if(legend_state == "on") {
+        change.forEach(function(point) {
             d3.select(clicked).select("rect").style("fill", '#a6a6a6');
             for (i = 0; i < change.length; i++) {
                 change[i].material.color.setHex(0xa6a6a6);
             }
             point.state = "gray";
-        }
-        else if (change[0].state == "gray") {
+        });
+        clicked.setAttribute("state", "gray");
+    }
+    else if (legend_state == "gray") {
+        change.forEach(function(point) {
             d3.select(clicked).select("rect").style("fill", '#ffffff');
             for (i = 0; i < change.length; i++) {
                 change[i].material.visible = false;
             }
             point.state = "off";
-        }
-        else if (change[0].state == "off") {
-            console.log(change[1]);
-            console.log(point);
+        });
+        clicked.setAttribute("state", "off");
+    }
+    else if (legend_state == "off") {
+        change.forEach(function(point) {
             point_color = color(point.group);
             d3.select(clicked).select("rect")
                 .style("fill", point_color);
@@ -308,8 +315,9 @@ function legendClick(group, clicked, color) {
                 change[i].material.visible = true;
             }
             point.state = "on";
-        }
-    })
+        });
+        clicked.setAttribute("state", "on");
+    }
 }
 
 function clickOn(points, color) {
@@ -322,7 +330,8 @@ function clickOn(points, color) {
             i.material.color.setStyle(color(i.group));
             i.material.visible = true;
             i.state = "on"
-        })
+        });
+        d3.selectAll(".ldata").each(function() { d3.select(this).attr("state", "on"); });
     };
 }
 
@@ -335,7 +344,8 @@ function clickGray(points) {
             i.material.color.setHex(0xa6a6a6);
             i.material.visible = true;
             i.state = "gray"
-        })
+        });
+        d3.selectAll(".ldata").each(function() { d3.select(this).attr("state", "gray"); });
     };
 }
 
@@ -347,7 +357,8 @@ function clickOff(points) {
         array.forEach(function(i) {
             i.material.visible = false;
             i.state = "off"
-        })
+        });
+        d3.selectAll(".ldata").each(function() { d3.select(this).attr("state", "off"); });
     };
 }
 
@@ -363,8 +374,8 @@ function get_all(group, points) {
 }
 
 function get_categories(data) {
-    var pointCount = data.length;
-    var categories = [];
+    pointCount = data.length;
+    categories = [];
     for (i=0; i<pointCount; i++) {
         var group = data[i].r;
         if (group) {
