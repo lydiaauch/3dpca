@@ -165,7 +165,7 @@ function click(event, color){
     if(intersects.length > 0 ){
         var object = intersects[0].object;
         point_color = color(object.group);
-        document.getElementById("tooltip").innerHTML = "Last Clicked: " + object.name;
+        document.getElementById("tooltip").innerHTML = "Last Clicked: " + object.group + " | " + object.name ;
         if(object.state == "on") {
             intersects[0].object.material.color.setHex(0xa6a6a6);
             object.state = "gray";
