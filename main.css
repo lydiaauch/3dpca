@@ -1,3 +1,7 @@
+body {
+    overflow: hidden;
+}
+
 #plot {
     width: 78%;
     height: 90%;
